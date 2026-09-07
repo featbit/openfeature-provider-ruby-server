@@ -134,6 +134,43 @@ RSpec.describe FeatBit::OpenFeature::Provider do
     expect(provider.track("purchase")).to be(false)
   end
 
+  it "reports initialized offline clients as ready and keeps evaluation available" do
+    ready_events = []
+    error_events = []
+    client.add_handler(OpenFeature::SDK::ProviderEvent::PROVIDER_READY) { |details| ready_events << details }
+    client.add_handler(OpenFeature::SDK::ProviderEvent::PROVIDER_ERROR) { |details| error_events << details }
+    ready_events.clear
+
+    provider.client.status_provider.update(FeatBit::Status::OFFLINE)
+
+    expect { provider.init }.not_to raise_error
+    expect(client.provider_status).to eq(OpenFeature::SDK::ProviderState::READY)
+    expect(ready_events.size).to eq(1)
+    expect(error_events).to be_empty
+    expect(client.fetch_boolean_value(flag_key: "bool", default_value: false)).to be(true)
+  end
+
+  it "reports offline clients without initialized data as not ready" do
+    empty = described_class.new(FeatBit::Options.new(offline: true))
+    OpenFeature::SDK.configure do |config|
+      expect { config.set_provider_and_wait(empty) }.to raise_error(OpenFeature::SDK::ProviderInitializationError)
+    end
+    error_events = []
+    offline_client = OpenFeature::SDK.build_client(evaluation_context: context)
+    offline_client.add_handler(OpenFeature::SDK::ProviderEvent::PROVIDER_ERROR) { |details| error_events << details }
+    error_events.clear
+
+    empty.client.status_provider.update(FeatBit::Status::OFFLINE, message: "No bootstrap data")
+
+    expect(offline_client.provider_status).to eq(OpenFeature::SDK::ProviderState::ERROR)
+    expect(error_events.size).to eq(1)
+    expect(error_events.first[:error_code]).to eq("PROVIDER_NOT_READY")
+    expect(empty.fetch_boolean_value(flag_key: "bool", default_value: false,
+                                    evaluation_context: context).error_code).to eq("PROVIDER_NOT_READY")
+  ensure
+    empty&.shutdown
+  end
+
   it "forwards stale, recovery and configuration events and removes listeners on shutdown" do
     events = []
     client.add_handler(OpenFeature::SDK::ProviderEvent::PROVIDER_STALE) { |details| events << details }

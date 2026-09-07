@@ -65,6 +65,9 @@ module FeatBit
 
       def status_changed(status, message)
         events = ::OpenFeature::SDK::ProviderEvent
+        if status == FeatBit::Status::OFFLINE && client.initialized?
+          status = FeatBit::Status::READY
+        end
         case status
         when FeatBit::Status::READY
           emit_event(events::PROVIDER_READY)
