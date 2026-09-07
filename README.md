@@ -154,10 +154,12 @@ data the provider reports `PROVIDER_NOT_READY`.
 The console example evaluates a boolean flag against a FeatBit environment:
 
 ```sh
-FEATBIT_ENV_SECRET="your-environment-secret" \
-FEATBIT_FLAG_KEY="your-flag-key" \
-bundle exec ruby examples/console.rb
+FEATBIT_ENV_SECRET="your-environment-secret" bundle exec ruby examples/console.rb
 ```
+
+Enter a boolean flag key at the prompt to evaluate it. The prompt repeats so
+multiple flags can be evaluated in one session. Enter `exit`, `quit`, or `q`
+to stop the application.
 
 Set `FEATBIT_TARGETING_KEY` to evaluate for a different user. The streaming and
 event URLs default to FeatBit Cloud and can be overridden with
