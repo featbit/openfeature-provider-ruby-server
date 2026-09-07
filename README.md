@@ -149,6 +149,20 @@ Supply a full FeatBit data-sync payload containing feature flags and segments.
 Offline mode disables networking and analytics. Without initialized bootstrap
 data the provider reports `PROVIDER_NOT_READY`.
 
+## Console example
+
+The console example evaluates a boolean flag against a FeatBit environment:
+
+```sh
+FEATBIT_ENV_SECRET="your-environment-secret" \
+FEATBIT_FLAG_KEY="your-flag-key" \
+bundle exec ruby examples/console.rb
+```
+
+Set `FEATBIT_TARGETING_KEY` to evaluate for a different user. The streaming and
+event URLs default to FeatBit Cloud and can be overridden with
+`FEATBIT_STREAMING_URL` and `FEATBIT_EVENT_URL`.
+
 ## Development
 
 ```sh
