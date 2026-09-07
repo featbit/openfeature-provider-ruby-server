@@ -1,0 +1,37 @@
+name: Release gem
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: Production
+
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+          bundler-cache: true
+
+      - name: Verify tag matches gem version
+        shell: bash
+        run: |
+          version="$(ruby -Ilib -rfeatbit/openfeature/version -e 'print FeatBit::OpenFeature::VERSION')"
+          test "v${version}" = "${GITHUB_REF_NAME}"
+
+      - name: Run tests
+        run: bundle exec rake
+
+      - uses: rubygems/release-gem@v1

@@ -9,10 +9,10 @@ Evaluation and analytics are handled by the [FeatBit Ruby Server SDK](https://gi
 Ruby 3.4 or newer. This provider uses `openfeature-sdk ~> 0.6.5` and
 `featbit-server-sdk ~> 0.1.0`.
 
-Until the first RubyGems release, add the repository to your Gemfile:
+Add the provider to your Gemfile:
 
 ```ruby
-gem "featbit-openfeature-provider", git: "https://github.com/featbit/openfeature-provider-ruby-server"
+gem "featbit-openfeature-provider", "~> 0.1.0"
 ```
 
 Run `bundle install`. For local development, use `path:` pointing at this checkout.
