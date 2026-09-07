@@ -31,7 +31,40 @@ jobs:
           version="$(ruby -Ilib -rfeatbit/openfeature/version -e 'print FeatBit::OpenFeature::VERSION')"
           test "v${version}" = "${GITHUB_REF_NAME}"
 
+      - name: Prepare release notes
+        shell: ruby {0}
+        run: |
+          require "fileutils"
+          require File.expand_path("lib/featbit/openfeature/version.rb")
+
+          version = FeatBit::OpenFeature::VERSION
+          changelog = File.read("CHANGELOG.md")
+          section = changelog.split(/^## /).drop(1).find do |entry|
+            entry.lines.first.strip.match?(/\A#{Regexp.escape(version)}(?:\s+-\s+\d{4}-\d{2}-\d{2})?\z/)
+          end
+          abort "Missing CHANGELOG entry for #{version}" unless section
+          notes = section.lines.drop(1).join.strip
+          abort "Empty CHANGELOG entry for #{version}" if notes.empty?
+
+          FileUtils.mkdir_p("pkg")
+          File.write("pkg/release-notes.md", "#{notes}\n")
+
       - name: Run tests
         run: bundle exec rake
 
       - uses: rubygems/release-gem@v1
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" --jq '.[].tag_name' > "${RUNNER_TEMP}/release-tags.txt"
+          if grep -Fxq -- "${GITHUB_REF_NAME}" "${RUNNER_TEMP}/release-tags.txt"; then
+            echo "Release ${GITHUB_REF_NAME} already exists; skipping creation."
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file pkg/release-notes.md
+          fi
